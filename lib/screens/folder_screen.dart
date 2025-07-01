@@ -97,58 +97,60 @@ class _FolderScreenState extends State<FolderScreen> {
           ),
         ],
       ),
-      body: Consumer<AppDataProvider>(
-        builder: (context, provider, child) {
-          final docsInFolder = widget.folder.documentIds
-              .map((id) => provider.documents[id])
-              .where((doc) => doc != null)
-              .cast<Document>()
-              .toList();
+      body: SafeArea(
+        child: Consumer<AppDataProvider>(
+          builder: (context, provider, child) {
+            final docsInFolder = widget.folder.documentIds
+                .map((id) => provider.documents[id])
+                .where((doc) => doc != null)
+                .cast<Document>()
+                .toList();
 
-          // Sorting logic
-          docsInFolder.sort((a, b) {
-            if (_sortOption == SortOption.name) {
-              return a.name.toLowerCase().compareTo(b.name.toLowerCase());
-            } else {
-              return b.addedDate.compareTo(a.addedDate); // Newest first
-            }
-          });
+            // Sorting logic
+            docsInFolder.sort((a, b) {
+              if (_sortOption == SortOption.name) {
+                return a.name.toLowerCase().compareTo(b.name.toLowerCase());
+              } else {
+                return b.addedDate.compareTo(a.addedDate); // Newest first
+              }
+            });
 
-          if (docsInFolder.isEmpty) {
-            return Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  const Icon(Icons.file_copy_outlined, size: 60, color: Colors.grey),
-                  const SizedBox(height: 16),
-                  const Text("This folder is empty.", style: TextStyle(fontSize: 16, color: Colors.grey)),
-                  const SizedBox(height: 16),
-                  ElevatedButton.icon(
-                      icon: const Icon(Icons.note_add_outlined),
-                      label: const Text("Import a PDF"),
-                      onPressed: () => provider.importDocument(widget.folder.id))
-                ],
-              ),
-            );
-          }
-
-          return ReorderableListView.builder(
-            padding: const EdgeInsets.all(8.0),
-            itemCount: docsInFolder.length,
-            itemBuilder: (context, index) {
-              final doc = docsInFolder[index];
-              return PdfListItem(
-                key: ValueKey(doc.id),
-                document: doc,
-                onTap: () => OpenFilex.open(doc.path),
-                onLongPress: () => _showDocumentOptions(context, doc, widget.folder.id),
+            if (docsInFolder.isEmpty) {
+              return Center(
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Icon(Icons.file_copy_outlined, size: 60, color: Colors.grey),
+                    const SizedBox(height: 16),
+                    const Text("This folder is empty.", style: TextStyle(fontSize: 16, color: Colors.grey)),
+                    const SizedBox(height: 16),
+                    ElevatedButton.icon(
+                        icon: const Icon(Icons.note_add_outlined),
+                        label: const Text("Import a PDF"),
+                        onPressed: () => provider.importDocument(widget.folder.id))
+                  ],
+                ),
               );
-            },
-            onReorder: (oldIndex, newIndex) {
-              provider.reorderDocuments(widget.folder.id, oldIndex, newIndex);
-            },
-          );
-        },
+            }
+
+            return ReorderableListView.builder(
+              padding: const EdgeInsets.all(8.0),
+              itemCount: docsInFolder.length,
+              itemBuilder: (context, index) {
+                final doc = docsInFolder[index];
+                return PdfListItem(
+                  key: ValueKey(doc.id),
+                  document: doc,
+                  onTap: () => OpenFilex.open(doc.path),
+                  onLongPress: () => _showDocumentOptions(context, doc, widget.folder.id),
+                );
+              },
+              onReorder: (oldIndex, newIndex) {
+                provider.reorderDocuments(widget.folder.id, oldIndex, newIndex);
+              },
+            );
+          },
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.note_add_outlined),

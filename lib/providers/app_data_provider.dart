@@ -165,4 +165,22 @@ class AppDataProvider extends ChangeNotifier {
     folder.save();
     notifyListeners();
   }
+  
+  // Search Operations
+  List<Document> searchDocuments(String query) {
+    if (query.isEmpty) return [];
+    final lowerCaseQuery = query.toLowerCase();
+    return _documents.values
+        .where((doc) => doc.name.toLowerCase().contains(lowerCaseQuery))
+        .toList();
+  }
+
+  Folder? findFolderForDocument(String documentId) {
+    for (var folder in _folders) {
+      if (folder.documentIds.contains(documentId)) {
+        return folder;
+      }
+    }
+    return null;
+  }
 }

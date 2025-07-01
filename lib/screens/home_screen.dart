@@ -7,6 +7,7 @@ import 'package:docnest/screens/folder_screen.dart';
 import 'package:docnest/widgets/add_folder_dialog.dart';
 import 'package:docnest/widgets/folder_card.dart';
 import 'package:docnest/widgets/rename_dialog.dart';
+import 'package:docnest/screens/search_screen.dart';
 import 'package:docnest/utils/theme.dart';
 
 class HomeScreen extends StatefulWidget {
@@ -417,11 +418,26 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
                                 ),
                               ],
                             ),
-                            Container(
-                              padding: const EdgeInsets.all(12),
-                              decoration: BoxDecoration(
-                                color: Colors.grey.shade100,
-                                borderRadius: BorderRadius.circular(16),
+                            IconButton(
+                              onPressed: () => Navigator.push(
+                                context,
+                                PageRouteBuilder(
+                                  pageBuilder: (context, animation, secondaryAnimation) => const SearchScreen(),
+                                  transitionsBuilder: (context, animation, secondaryAnimation, child) {
+                                    return FadeTransition(opacity: animation, child: child);
+                                  },
+                                  transitionDuration: AppTheme.fastAnimation,
+                                ),
+                              ),
+                              icon: const Icon(Icons.search_rounded),
+                              iconSize: 28,
+                              color: Colors.grey.shade700,
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.grey.shade100,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(16),
+                                ),
+                                padding: const EdgeInsets.all(12),
                               ),
                             ),
                           ],
