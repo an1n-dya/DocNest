@@ -291,7 +291,7 @@ class _HomeScreenState extends State<HomeScreen> with TickerProviderStateMixin {
 
               _buildNewItemOption(
                 icon: Icons.note_add_outlined,
-                title: 'Import PDF',
+                title: 'Import Document',
                 subtitle: 'Add documents to your library',
                 gradient: AppTheme.accentGradient,
                 onTap: () {

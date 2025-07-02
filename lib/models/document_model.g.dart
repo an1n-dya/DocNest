@@ -22,13 +22,14 @@ class DocumentAdapter extends TypeAdapter<Document> {
       path: fields[2] as String,
       addedDate: fields[3] as DateTime,
       thumbnailPath: fields[4] as String,
+      documentType: fields[5] as DocumentType,
     );
   }
 
   @override
   void write(BinaryWriter writer, Document obj) {
     writer
-      ..writeByte(5)
+      ..writeByte(6)
       ..writeByte(0)
       ..write(obj.id)
       ..writeByte(1)
@@ -38,7 +39,9 @@ class DocumentAdapter extends TypeAdapter<Document> {
       ..writeByte(3)
       ..write(obj.addedDate)
       ..writeByte(4)
-      ..write(obj.thumbnailPath);
+      ..write(obj.thumbnailPath)
+      ..writeByte(5)
+      ..write(obj.documentType);
   }
 
   @override

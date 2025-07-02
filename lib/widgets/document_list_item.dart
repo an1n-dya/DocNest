@@ -2,13 +2,14 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:docnest/models/document_model.dart';
+import 'package:docnest/models/document_type.dart';
 
-class PdfListItem extends StatelessWidget {
+class DocumentListItem extends StatelessWidget {
   final Document document;
   final VoidCallback onTap;
   final VoidCallback onLongPress;
 
-  const PdfListItem({
+  const DocumentListItem({
     super.key,
     required this.document,
     required this.onTap,
@@ -17,6 +18,17 @@ class PdfListItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    Widget thumbnailWidget;
+    if (document.thumbnailPath.isNotEmpty) {
+      thumbnailWidget = Image.file(
+        File(document.thumbnailPath),
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) => _buildDefaultIcon(document.documentType),
+      );
+    } else {
+      thumbnailWidget = _buildDefaultIcon(document.documentType);
+    }
+
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 6),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
@@ -36,14 +48,7 @@ class PdfListItem extends StatelessWidget {
           ),
           child: ClipRRect(
             borderRadius: BorderRadius.circular(8),
-            child: document.thumbnailPath.isNotEmpty
-                ? Image.file(
-              File(document.thumbnailPath),
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) =>
-              const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent),
-            )
-                : const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent),
+            child: thumbnailWidget,
           ),
         ),
         title: Text(
@@ -62,5 +67,14 @@ class PdfListItem extends StatelessWidget {
         trailing: const Icon(Icons.drag_handle_rounded, color: Colors.grey),
       ),
     );
+  }
+
+  Widget _buildDefaultIcon(DocumentType type) {
+    switch (type) {
+      case DocumentType.pdf:
+        return const Icon(Icons.picture_as_pdf_rounded, color: Colors.redAccent);
+      case DocumentType.image:
+        return const Icon(Icons.image_rounded, color: Colors.blueAccent);
+    }
   }
 }

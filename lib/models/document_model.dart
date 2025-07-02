@@ -1,4 +1,5 @@
 import 'package:hive/hive.dart';
+import 'package:docnest/models/document_type.dart';
 
 part 'document_model.g.dart';
 
@@ -19,11 +20,15 @@ class Document extends HiveObject {
   @HiveField(4)
   final String thumbnailPath;
 
+  @HiveField(5)
+  final DocumentType documentType;
+
   Document({
     required this.id,
     required this.name,
     required this.path,
     required this.addedDate,
     required this.thumbnailPath,
+    this.documentType = DocumentType.pdf,
   });
 }

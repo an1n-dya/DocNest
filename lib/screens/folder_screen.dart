@@ -6,7 +6,7 @@ import 'package:open_filex/open_filex.dart';
 import 'package:docnest/models/document_model.dart';
 import 'package:docnest/models/folder_model.dart';
 import 'package:docnest/providers/app_data_provider.dart';
-import 'package:docnest/widgets/pdf_list_item.dart';
+import 'package:docnest/widgets/document_list_item.dart';
 import 'package:docnest/widgets/rename_dialog.dart';
 import 'package:docnest/widgets/move_file_dialog.dart';
 
@@ -98,8 +98,8 @@ class _FolderScreenState extends State<FolderScreen> {
         ],
       ),
       body: SafeArea(
-        child: Consumer<AppDataProvider>(
-          builder: (context, provider, child) {
+        child: Selector<AppDataProvider, List<Document>>(
+          selector: (context, provider) {
             final docsInFolder = widget.folder.documentIds
                 .map((id) => provider.documents[id])
                 .where((doc) => doc != null)
@@ -114,6 +114,9 @@ class _FolderScreenState extends State<FolderScreen> {
                 return b.addedDate.compareTo(a.addedDate); // Newest first
               }
             });
+            return docsInFolder;
+          },
+          builder: (context, docsInFolder, child) {
 
             if (docsInFolder.isEmpty) {
               return Center(
@@ -126,7 +129,7 @@ class _FolderScreenState extends State<FolderScreen> {
                     const SizedBox(height: 16),
                     ElevatedButton.icon(
                         icon: const Icon(Icons.note_add_outlined),
-                        label: const Text("Import a PDF"),
+                        label: const Text("Import a Document"),
                         onPressed: () => provider.importDocument(widget.folder.id))
                   ],
                 ),
@@ -138,7 +141,7 @@ class _FolderScreenState extends State<FolderScreen> {
               itemCount: docsInFolder.length,
               itemBuilder: (context, index) {
                 final doc = docsInFolder[index];
-                return PdfListItem(
+                return DocumentListItem(
                   key: ValueKey(doc.id),
                   document: doc,
                   onTap: () => OpenFilex.open(doc.path),
@@ -146,7 +149,7 @@ class _FolderScreenState extends State<FolderScreen> {
                 );
               },
               onReorder: (oldIndex, newIndex) {
-                provider.reorderDocuments(widget.folder.id, oldIndex, newIndex);
+                Provider.of<AppDataProvider>(context, listen: false).reorderDocuments(widget.folder.id, oldIndex, newIndex);
               },
             );
           },
@@ -154,7 +157,7 @@ class _FolderScreenState extends State<FolderScreen> {
       ),
       floatingActionButton: FloatingActionButton(
         child: const Icon(Icons.note_add_outlined),
-        onPressed: () => provider.importDocument(widget.folder.id),
+        onPressed: () => Provider.of<AppDataProvider>(context, listen: false).importDocument(widget.folder.id),
       ),
     );
   }

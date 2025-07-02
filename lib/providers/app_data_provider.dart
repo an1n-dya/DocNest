@@ -5,9 +5,11 @@ import 'package:uuid/uuid.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:pdfx/pdfx.dart';
+import 'package:image/image.dart' as img;
 
 import 'package:docnest/models/document_model.dart';
 import 'package:docnest/models/folder_model.dart';
+import 'package:docnest/models/document_type.dart';
 
 class AppDataProvider extends ChangeNotifier {
   final _documentBox = Hive.box<Document>('documents');
@@ -65,25 +67,38 @@ class AppDataProvider extends ChangeNotifier {
   Future<void> importDocument(String folderId) async {
     final result = await FilePicker.platform.pickFiles(
       type: FileType.custom,
-      allowedExtensions: ['pdf'],
+      allowedExtensions: ['pdf', 'jpg', 'jpeg', 'png', 'gif'],
     );
 
     if (result != null && result.files.single.path != null) {
       final pickedFile = File(result.files.single.path!);
       final appDir = await getApplicationDocumentsDirectory();
       final fileName = result.files.single.name;
-      final newPath = '${appDir.path}/${_uuid.v4()}.pdf';
+      final fileExtension = fileName.split('.').last.toLowerCase();
+
+      DocumentType docType;
+      if (['jpg', 'jpeg', 'png', 'gif'].contains(fileExtension)) {
+        docType = DocumentType.image;
+      } else if (fileExtension == 'pdf') {
+        docType = DocumentType.pdf;
+      } else {
+        // Should not happen due to allowedExtensions
+        return;
+      }
+
+      final newPath = '${appDir.path}/${_uuid.v4()}.$fileExtension';
       await pickedFile.copy(newPath);
 
       // Generate Thumbnail
-      final thumbnailPath = await _generateThumbnail(newPath);
+      final thumbnailPath = await _generateThumbnail(newPath, docType);
 
       final newDoc = Document(
         id: _uuid.v4(),
         name: fileName,
         path: newPath,
         addedDate: DateTime.now(),
-        thumbnailPath: thumbnailPath,
+        thumbnailPath: thumbnailPath ?? '',
+        documentType: docType,
       );
 
       await _documentBox.put(newDoc.id, newDoc);
@@ -97,21 +112,38 @@ class AppDataProvider extends ChangeNotifier {
     }
   }
 
-  Future<String> _generateThumbnail(String pdfPath) async {
+  Future<String?> _generateThumbnail(String filePath, DocumentType docType) async {
     try {
-      final doc = await PdfDocument.openFile(pdfPath);
-      final page = await doc.getPage(1);
-      final pageImage = await page.render(width: 200, height: 200 * 1.414); // A4 aspect ratio
-      await page.close();
-
       final appDir = await getApplicationDocumentsDirectory();
       final thumbnailFile = File('${appDir.path}/${_uuid.v4()}.png');
-      await thumbnailFile.writeAsBytes(pageImage!.bytes);
+
+      if (docType == DocumentType.pdf) {
+        final doc = await PdfDocument.openFile(filePath);
+        final page = await doc.getPage(1);
+        final pageImage = await page.render(width: 200, height: (200 / page.width * page.height).round().toDouble()); // Maintain aspect ratio
+        await page.close();
+        await doc.close();
+        if (pageImage != null) {
+          await thumbnailFile.writeAsBytes(pageImage.bytes);
+        } else {
+          debugPrint("Failed to render PDF page image.");
+          return null;
+        }
+      } else if (docType == DocumentType.image) {
+        final imageBytes = await File(filePath).readAsBytes();
+        final image = img.decodeImage(imageBytes);
+        if (image != null) {
+          final thumbnail = img.copyResize(image, width: 200, height: (image.height * (200 / image.width)).round());
+          await thumbnailFile.writeAsBytes(img.encodePng(thumbnail));
+        } else {
+          debugPrint("Failed to decode image: $filePath");
+          return null;
+        }
+      }
       return thumbnailFile.path;
     } catch (e) {
-      // Return a placeholder path if thumbnail generation fails
       debugPrint("Thumbnail generation failed: $e");
-      return '';
+      return null;
     }
   }
 
@@ -137,12 +169,22 @@ class AppDataProvider extends ChangeNotifier {
     // Delete files from storage
     try {
       final file = File(doc.path);
-      if (await file.exists()) await file.delete();
-
-      final thumbnail = File(doc.thumbnailPath);
-      if (await thumbnail.exists()) await thumbnail.delete();
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint("Deleted document file: ${doc.path}");
+      }
     } catch (e) {
-      debugPrint("Error deleting files: $e");
+      debugPrint("Error deleting document file ${doc.path}: $e");
+    }
+
+    try {
+      final thumbnail = File(doc.thumbnailPath);
+      if (doc.thumbnailPath.isNotEmpty && await thumbnail.exists()) {
+        await thumbnail.delete();
+        debugPrint("Deleted thumbnail file: ${doc.thumbnailPath}");
+      }
+    } catch (e) {
+      debugPrint("Error deleting thumbnail file ${doc.thumbnailPath}: $e");
     }
 
     // Remove from folder and database
