@@ -1,4 +1,4 @@
-# docnest
+# DocNest
 
 Organize, preview, and open your PDFs in neat folders, effortlessly.
 
